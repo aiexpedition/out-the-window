@@ -1,0 +1,42 @@
+# Build outputs
+tools/**/out/
+tools/**/.venv/
+tools/**/__pycache__/
+tools/**/*.pyc
+
+# Python virtual environments (anywhere)
+.venv/
+venv/
+__pycache__/
+*.pyc
+*.pyo
+
+# iOS / Xcode (future)
+ios/**/DerivedData/
+ios/**/build/
+ios/**/*.xcuserdata/
+ios/**/xcuserdata/
+ios/**/.DS_Store
+*.xcworkspace/xcuserdata/
+
+# macOS
+.DS_Store
+
+# Windows
+Thumbs.db
+Desktop.ini
+
+# Editors
+.vscode/
+.idea/
+*.swp
+*~
+
+# Secrets
+.env
+.env.local
+*.pem
+*.key
+
+# Logs
+*.log
