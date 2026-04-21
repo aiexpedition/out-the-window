@@ -105,7 +105,7 @@ Unless explicitly stated, the active mode is assumed based on context and may be
 ### Dan — Owner & Intent Authority
 - Determines objectives and priorities.
 - Accepts, revises, or rejects proposed plans.
-- Performs final commits and merges.
+- Reviews CC's local commits and pushes to `origin` when satisfied.
 - Decides what "done" means.
 
 ### Claude — Chief Architect & Canon Editor
@@ -136,17 +136,19 @@ Unless explicitly stated, the active mode is assumed based on context and may be
 
 4a. Claude provides inline code blocks (drop-in replacements)  
 5a. Dan copies, pastes, tests  
-6a. Dan commits to git
+6a. Dan commits locally  
+7a. Dan pushes when satisfied
 
 **For Complex/Systematic Changes (>2 code blocks):**
 
 4b. Claude produces a downloadable markdown prompt for CC  
-5b. Dan delivers the prompt to CC (via terminal: `claude`)  
-6b. CC executes and reports summary  
-7b. Dan shares summary back with Claude for review  
-8b. Claude reviews and either approves or requests changes  
-9b. Repeat 5b-8b until approved  
-10b. Dan commits to git
+5b. Dan saves the prompt to `docs/prompts/<task-name>.md`  
+6b. Dan invokes CC via terminal (`claude`) and references the prompt path  
+7b. CC executes, commits locally if the prompt authorizes it, reports summary  
+8b. Dan shares summary back with Claude for review  
+9b. Claude reviews and either approves or requests changes  
+10b. Repeat 6b-9b until approved  
+11b. Dan pushes to `origin` when satisfied
 
 **Default Preference:** When scope is ambiguous, default to generating a CC prompt for efficiency.
 

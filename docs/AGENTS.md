@@ -20,7 +20,7 @@ Work is divided by **authority**, **affordance**, and **intent** — not by conv
 - Define business goals and product direction
 - Set refusal boundaries and tradeoff tolerance
 - Decide when work is complete and ready to ship
-- Perform final git commits
+- Review CC's local commits and push to `origin` when satisfied
 
 **Dan answers:**  
 *"What are we trying to accomplish, and when is it good enough?"*
@@ -92,7 +92,8 @@ Work is divided by **authority**, **affordance**, and **intent** — not by conv
 **Process:**
 1. Claude provides code block(s)
 2. Dan copies, pastes, tests
-3. Dan commits to git
+3. Dan commits locally (simple changes don't go through CC)
+4. Dan pushes when satisfied
 
 ---
 
@@ -107,13 +108,13 @@ Work is divided by **authority**, **affordance**, and **intent** — not by conv
 
 **Process:**
 1. Claude generates downloadable CC prompt (markdown file)
-2. Dan delivers prompt to CC via terminal: `claude`
-3. CC executes autonomously with error recovery
-4. CC reports summary
+2. Dan saves the prompt to `docs/prompts/<task-name>.md`
+3. Dan invokes CC via terminal (`claude`) and references the prompt path
+4. CC executes autonomously, commits locally when the prompt authorizes it, reports summary
 5. Dan shares summary with Claude for review
 6. Claude approves or requests changes
-7. Repeat 2–6 until approved
-8. Dan commits to git
+7. Repeat 3–6 until approved
+8. Dan pushes to `origin` when satisfied
 
 **Default Preference:** When scope is ambiguous, default to generating a CC prompt for efficiency.
 
@@ -256,7 +257,7 @@ Which context capsules provide relevant patterns.
 > - Database and ORM conventions
 > - Frontend bundling notes
 >
-> Remove this block if stack guidelines live in a separate file (e.g. `CLAUDE.md`).
+> Stack guidelines are documented in `/CLAUDE.md` at project root. Keep this section synchronized with that file; do not duplicate content.
 
 ---
 
@@ -288,10 +289,14 @@ Which context capsules provide relevant patterns.
 - Prefer explicit over clever
 
 ### Git Commits
-**Every prompt includes a commit message:**
+**Every CC prompt includes the commit message CC should use:**
 - Imperative mood: "Add feature" not "Added feature"
 - Scoped: "Fix dark mode in nav" not "Fix bug"
 - Concise: One line preferred
+
+**Authorization model:**
+- **Commits:** CC may commit when the prompt authorizes it or when Dan instructs it directly. CC never commits unprompted.
+- **Pushes:** CC never pushes unless Dan directly and explicitly instructs it in the current conversation. Prompt artifacts cannot authorize a push.
 
 ### Summary Reports
 When CC completes work, provide:

@@ -70,17 +70,18 @@ Everything in this spec exists to test that thesis honestly.
 
 The route passes near or through Real County's sister counties on the Edwards Plateau, crossing country where Dan's family history is written into the land itself.
 
-### Route Corridor Marker Set
+### Statewide Marker Set
 
-- **Target count:** All markers within the corridor — likely 100–300 markers depending on corridor width
+- **Target count:** All THC Historical Markers statewide that pass objective quality filters. Approximately 13.5k records as of the April 2026 CSV export. See `tools/data-pipeline/out/markers-texas.summary.md` for the current authoritative count.
 - **Source:** THC Historical Marker CSV (already in project)
 - **Selection criteria — objective only:**
-  - Within a defined radius of the planned driving corridor (e.g., ~3 miles either side of the route polyline)
-  - Lat/long data present and validated
   - Inscription text present (not just title)
-- **No editorial curation.** Markers are included or excluded by geographic and data-completeness rules alone. No thematic filtering, no personal selection, no narrative shaping. The POC tests how Out the Window behaves for any user driving this route — which means the data set must reflect what any user would experience.
-- **Bundled in app binary:** All corridor-qualifying markers ship with the app as seed data. No network fetch required for core experience.
-- **Natural outcome:** Marker #4831 (McLauren Massacre) will be present if-and-only-if the geographic filter includes it. No special handling. If it fires during the drive, it fires because the algorithm worked — not because it was hand-placed.
+  - Valid UTM coordinates that convert to a lat/long inside the Texas bounding box
+  - No other filter — no corridor, no radius, no editorial selection
+- **Why statewide, not corridor:** POC narration uses Apple's built-in `AVSpeechSynthesizer` with zero per-marker cost. A corridor filter would shape the dataset without adding POC value, and would undermine the product thesis — which is that proximity-triggered narration of *objective* Texas history feels meaningful to any traveler. If the user detours off the planned route, markers there still fire. That is the real experience, not a curated one.
+- **Bundled in app binary:** All qualifying markers ship with the app as seed data. No network fetch required for core experience. File size is on the order of 5 MB pretty-printed JSON, well under what fits in an iOS app bundle.
+- **Natural outcome:** Marker #4831 (McLauren Massacre) will be present because it passes the objective filter, not because it was hand-placed. If it fires during the drive, it fires because the algorithm worked.
+- **Runtime implication:** The iOS app cannot register 13.5k simultaneous geofences (CLLocationManager caps at 20 per app). A sliding-window strategy is required — maintain active geofences for the N closest markers, refresh the set as the user moves. This is production-grade architecture exercised honestly by the POC.
 
 ### Proximity Detection Behavior
 
@@ -201,7 +202,7 @@ OutTheWindow/
 ├── Models/
 │   └── Marker.swift                (core data model)
 └── Resources/
-    └── markers-corridor.json       (bundled 30–50 markers)
+    └── markers-texas.json          (bundled ~13.5k markers, statewide)
 ```
 
 **Design principles:**
@@ -213,17 +214,20 @@ OutTheWindow/
 
 ### Data Preparation (Pre-Build Task)
 
-Before writing Swift code, a corridor marker dataset must exist:
+Before writing Swift code, a statewide marker dataset must exist. This work is complete: the pipeline lives in `tools/data-pipeline/` and produces `markers-texas.json` from the THC CSV.
 
-1. **Define the route polyline.** Build a geographic line representation of the actual highway route (McKinney → Fort Worth loop → I-20 west → US-183 → US-377 → US-190 → US-83 → Leakey).
-2. **Filter THC Historical Marker CSV** for markers within a defined radius of the polyline (recommend 3 miles either side — tunable based on what we see in the dataset).
-3. **Validate data quality:** every included marker must have lat/long and inscription text. Drop markers with incomplete data.
-4. **Clean inscription text for TTS:** expand abbreviations, remove bracketed editorial notes, normalize punctuation for natural speech cadence.
-5. **Export to `markers-corridor.json`** bundled in app resources.
+Pipeline steps:
 
-The filter is mechanical and reproducible. No hand-selection, no inclusion or exclusion based on content. The same script run against the same data produces the same output. Whoever runs it gets the same markers.
+1. **Read the THC Historical Marker CSV** from `data/thc/`.
+2. **Convert UTM to WGS84.** THC uses NAD83 datum across zones 13/14/15. Per-row conversion via `pyproj`.
+3. **Validate data quality:** every included marker must have inscription text and valid UTM coordinates. Output must fall inside the Texas bounding box (sanity check against conversion errors).
+4. **Clean inscription text for TTS:** expand abbreviations conservatively, remove bracketed editorial notes, normalize smart quotes. Preserve the original text alongside the cleaned version.
+5. **Export to `tools/data-pipeline/out/markers-texas.json`** for bundling into the iOS app. Output is ~5 MB pretty-printed JSON.
+6. **Emit a summary report** at `tools/data-pipeline/out/markers-texas.summary.md` covering record counts, rejection breakdown, county distribution, and spot-check markers.
 
-This can be done in Python on the Win11 rig and doesn't require the Mac. Output is likely 100–500 KB JSON.
+The filter is mechanical and reproducible. No hand-selection, no inclusion or exclusion based on content. The same script run against the same data produces byte-identical output. Whoever runs it gets the same markers.
+
+The pipeline is pure Python (`pyproj` + stdlib) and runs on the Win11 rig. It does not require the Mac.
 
 ### The Proximity Detection Loop
 
@@ -321,11 +325,13 @@ This is the work breakdown. Each phase has a clear acceptance point.
 - Hello World builds and runs in Simulator
 - Hello World builds and runs on Dan's actual iPhone
 
-### Phase 1: Data Pipeline (Days 2–3)
-- Python script to filter THC CSV → `markers-corridor.json`
-- Marker model in Swift with JSON decoding
-- MarkerRepository loads bundled JSON
-- Unit test: 30–50 markers load, including #4831
+### Phase 1: Data Pipeline (COMPLETE as of 2026-04-21)
+- Python script converts THC CSV → `markers-texas.json` (13,456 records, statewide)
+- Pipeline: `tools/data-pipeline/` (see `tools/data-pipeline/out/markers-texas.summary.md`)
+- Remaining Phase 1 work once Xcode is set up:
+  - Marker model in Swift with JSON decoding
+  - MarkerRepository loads bundled JSON
+  - Sanity check: dataset loads without crashing the app at startup
 
 ### Phase 2: Map + Markers (Days 4–6)
 - MapView with current location

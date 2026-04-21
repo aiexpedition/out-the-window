@@ -102,9 +102,10 @@ Historical references are preserved for continuity and forensic clarity.
 - Do not cross role boundaries without explicit instruction
 - Authority decisions precede affordance decisions
 - All delegated work must originate from **Claude** as a downloadable markdown prompt
-- **Every prompt must include a recommended git commit message**
+- **Every prompt must specify the git commit message CC should use when committing**
     - Imperative mood
     - Scoped to the change
+    - CC commits when authorized by the prompt or by Dan in conversation; CC never pushes (see `AGENTS.md` § Git Commits)
 - Do not introduce new conventions without documenting them in `/docs`
 - Prefer explicit file replacements or diffs over vague descriptions
 - Assume `/docs` is the source of truth, not the codebase alone
