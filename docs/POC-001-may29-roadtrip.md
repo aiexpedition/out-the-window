@@ -91,13 +91,16 @@ The route passes near or through Real County's sister counties on the Edwards Pl
 - **Notification cooldown:** Once a marker has fired a notification in a session, it does not fire again for 24 hours (prevents repeat firing on U-turns, return trips, or loop drives)
 - **Speed filter:** Notifications suppressed when speed has been below 5 mph for more than 2 minutes (user is parked/stopped). Pre-existing notifications in the notification center remain tappable.
 
-### Narration
-- **POC approach:** AVSpeechSynthesizer (Apple's built-in TTS)
-  - Default system voice
-  - Rate and pitch tuned for clear comprehension at highway speeds
-- **Content source:** THC marker `inscription` field, cleaned for TTS (remove bracketed notes, abbreviations expanded)
-- **Audio session:** `.playback` category with `.duckOthers` option — ducks any concurrent audio (Apple Maps voice, music)
-- **Not in POC:** Recorded voice narration, multiple voice options, custom narration scripts
+### Narration (Hybrid — see Decision 9)
+- **POC approach:** Hybrid two-tier `NarrationService` with a universal fallback chain
+  - **Tier 1 — Cached recorded audio:** For ~30–50 markers along the May 29 route that Dan hand-curates (presentation curation only — the data layer stays fully statewide per Decision 8). Audio generated once via commercial TTS (ElevenLabs or similar), stored as `marker-{markerNum}.m4a`, bundled in the app binary at `Resources/narrations/`.
+  - **Tier 3 — AVSpeechSynthesizer fallback:** Every marker not in the curated set. Rate and pitch tuned for highway-speed comprehension. Uses iOS 17+ premium system voices where available.
+  - (Tier 2 — dynamically fetched audio — is production only, triggered by web-to-phone route queuing from the companion site. Not in POC scope.)
+- **Lookup logic:** `if audioFile(for: marker.markerNum) exists → play it; else → speak(marker.narrationText)`. Clean seam between tiers.
+- **Content source:** THC marker `markerText` field, cleaned for TTS (whitespace normalization, conservative abbreviation expansion, bracketed-note removal, smart-quote normalization). Cleaned text is stored as `narrationText` in the bundled JSON; pipeline already produced this.
+- **Audio session:** `.playback` category with `.duckOthers` option — ducks any concurrent audio (Apple Maps voice, music). Background audio entitlement enabled.
+- **Curation discipline:** Data curation (shaping which markers exist or fire) is prohibited. Presentation curation (which markers get recorded narration vs. TTS fallback) is permitted and expected. Every marker can still fire notifications; every notification can still be tapped.
+- **Not in POC:** Dynamic audio fetch, companion site integration, user-selectable voices, server-side push, CarPlay narration routing.
 
 ### UI — Minimum Viable
 - **Map View (primary screen):**
@@ -131,14 +134,13 @@ The route passes near or through Real County's sister counties on the Edwards Pl
 - ❌ User accounts, authentication, or sync with companion site
 - ❌ Subscription flow, StoreKit, paywall logic
 - ❌ Android build
-- ❌ Coverage beyond the McKinney→Leakey corridor
-- ❌ Premium features: voice selection, genealogy, bookmarks sync
-- ❌ Companion TALL website integration
+- ❌ Premium features: user-selectable voices, genealogy, bookmarks sync
+- ❌ Companion TALL website (including route planning & queuing — this is the production-grade trigger for recorded-narration downloads; POC hand-bakes the curated route set into the app binary instead)
+- ❌ Dynamic audio fetch (tier 2 of the NarrationService fallback chain — production only)
 - ❌ Push notifications server-side
 - ❌ Analytics, crash reporting, telemetry beyond on-device logs
 - ❌ App Store submission readiness
 - ❌ Marketing/onboarding/polish
-- ❌ Recorded voice narration
 - ❌ Multi-language support
 - ❌ Accessibility beyond what SwiftUI gives us for free
 
@@ -153,7 +155,7 @@ The POC is successful if, on May 29, 2026:
 ### Must-Pass
 1. **The mechanism works.** Multiple markers along the route trigger narration at appropriate times as the truck approaches them. The specific markers are whatever the data contains; the test is that the triggering mechanism is correct and reliable.
 2. **Reliability threshold:** At least 70% of markers that should trigger (based on drive path and marker proximity) do trigger. A single missed marker is acceptable; systematic failure is not.
-3. **Narration quality is adequate for comprehension at 60–70 mph** — audible over road noise, clearly paced, ducks other audio properly.
+3. **Narration quality is adequate for comprehension at 60–70 mph** — audible over road noise, clearly paced, ducks other audio properly. Curated recorded narrations (tier 1) should feel materially warmer than AVSpeech fallback (tier 3) — the hybrid approach is only worth the effort if the family notices the difference on the drive.
 4. **No crashes.** App runs continuously through the drive without force-quitting.
 5. **Battery budget:** Phone remains usable at end of drive (not drained by background GPS). Vehicle charging allowed.
 
@@ -202,7 +204,10 @@ OutTheWindow/
 ├── Models/
 │   └── Marker.swift                (core data model)
 └── Resources/
-    └── markers-texas.json          (bundled ~13.5k markers, statewide)
+    ├── markers-texas.json          (bundled ~13.5k markers, statewide)
+    └── narrations/                 (bundled recorded audio for ~30-50 curated markers)
+        ├── marker-4831.m4a         (example: one curated file per markerNum)
+        └── marker-{markerNum}.m4a
 ```
 
 **Design principles:**
@@ -345,12 +350,19 @@ This is the work breakdown. Each phase has a clear acceptance point.
 - Debug view shows live GPS + nearest marker
 - Test while driving around McKinney to validate geofence behavior
 
-### Phase 4: Narration (Days 10–12)
-- NarrationService using AVSpeechSynthesizer
+### Phase 4: Narration (Days 10–14)
+- NarrationService with two-tier fallback chain (cached recorded audio → AVSpeechSynthesizer)
 - Audio session configured for `.playback` + `.duckOthers`
 - Background audio entitlement enabled
 - "Read Aloud" button on Marker Detail works
 - Geofence entry triggers auto-narration
+- **Curation sub-phase:**
+  - Build a small Python tool (`tools/route-preview/`) that filters `markers-texas.json` to the ~200–400 markers within 3 miles of the May 29 route polyline
+  - Dan reviews the output and picks ~30–50 markers to narrate
+  - ElevenLabs account setup, voice selection (consider voice cloning for emotional weight)
+  - Batch audio generation: `marker-{markerNum}.m4a` for each curated marker
+  - Audio files bundled in Xcode under `Resources/narrations/`
+- Both tiers verified end-to-end before moving to Phase 5
 
 ### Phase 5: Integration + Dogfood (Days 13–18)
 - Start Trip button wires everything together
