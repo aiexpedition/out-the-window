@@ -11,13 +11,26 @@ __pycache__/
 *.pyc
 *.pyo
 
-# iOS / Xcode (future)
+# iOS / Xcode
 ios/**/DerivedData/
 ios/**/build/
+ios/**/.build/
 ios/**/*.xcuserdata/
 ios/**/xcuserdata/
-ios/**/.DS_Store
+ios/**/*.xcuserstate
+ios/**/*.xcscmblueprint
+ios/**/*.xccheckout
+ios/**/Pods/
+ios/**/*.xcworkspace/xcuserdata/
 *.xcworkspace/xcuserdata/
+
+# Swift Package Manager
+ios/**/.swiftpm/
+ios/**/Package.resolved
+
+# iOS Signing
+ios/**/*.mobileprovision
+ios/**/*.p12
 
 # macOS
 .DS_Store
