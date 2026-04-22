@@ -19,6 +19,19 @@ source .venv/bin/activate
 pip install -r requirements.txt
 ```
 
+### WSL / Ubuntu prerequisite
+
+Stock Ubuntu Python does not ship the `venv` module. If `python3 -m venv .venv`
+fails with `ensurepip is not available`, install the matching venv package first:
+
+```bash
+sudo apt update && sudo apt install -y python3.12-venv
+```
+
+Replace `python3.12-venv` with the version that matches `python3 --version`
+(e.g. `python3.11-venv`, `python3.13-venv`). macOS and most native Linux
+distributions include `venv` out of the box.
+
 ## Run
 
 ```bash
