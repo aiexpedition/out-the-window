@@ -16,6 +16,7 @@
 		};
 		D07EA3E02F990F1F00E4F569 /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
+			containerPortal = D07EA3C02F990F1D00E4F569 /* Project object */;
 			proxyType = 1;
 			remoteGlobalIDString = D07EA3C72F990F1D00E4F569;
 			remoteInfo = OutTheWindow;
