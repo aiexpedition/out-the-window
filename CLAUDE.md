@@ -73,10 +73,11 @@ Dan may declare a mode at any time. Defaults inferred from context. Modes: **Dis
 
 ### iOS App (Swift / SwiftUI native)
 - Apple frameworks only — no third-party dependencies without ADR justification
-- Services are plain Swift classes with single responsibilities
-- Views use `@Observable` (iOS 17+ Observation framework)
+- Services are plain Swift classes (`final class`); models are `struct`
+- Views and state holders use `@Observable` (iOS 17+ Observation framework)
 - No persistence beyond bundled JSON for POC; SwiftData for production
-- Logging via `os.Logger`
+- Logging via `os.Logger`, subsystem `com.theaiexpedition.OutTheWindow`, category per component (`data`, `location`, `narration`, etc.)
+- Xcode 16 synchronized folder groups: files added under `OutTheWindow/` and `OutTheWindowTests/` directories auto-register to their targets — no manual `project.pbxproj` edits needed for source files
 
 Full rationale: `docs/ADR-001-mobile-framework.md`
 
